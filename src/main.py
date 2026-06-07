@@ -1,6 +1,8 @@
 import speech_recognition as sr
 import pyttsx3
 
+# Import our new skills
+from skills import datetime_skill, system_skill
 # Initialize the text-to-speech engine
 engine = pyttsx3.init()
 
@@ -45,5 +47,11 @@ if __name__ == "__main__":
                 speak("Goodbye! Shutting down.")
                 break
             else:
-                # Basic echo response for now
-                speak(f"I heard you say: {command}")
+                # Route command to our skills system
+                if datetime_skill.handle_command(command, speak):
+                    pass # Skill handled it
+                elif system_skill.handle_command(command, speak):
+                    pass # Skill handled it
+                else:
+                    # Fallback if no skill understands the command
+                    speak("I'm not sure how to help with that yet.")
