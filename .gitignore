@@ -1,6 +1,18 @@
-venv/
-venv311/
-py
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
 *.pyc
+
+# Environments
 .env
+venv/
+venv*/
+venv311/
+ENV/
+env/
+py
+
+# IDEs
+.vscode/
+.idea/
