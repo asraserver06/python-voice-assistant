@@ -252,6 +252,8 @@ if __name__ == "__main__":
                     # They said a full sentence: "Hey Assistant what time is it"
                     print(f"\nUser said: {user_command}")
                     is_running = process_command(command_after_wake)
+                    if is_running:
+                        print("\n[Going back to sleep... Say 'Hey Assistant' to wake me up]")
                 else:
                     # They just said "Hey Assistant"
                     print(f"\nUser said: {user_command}")
@@ -259,3 +261,5 @@ if __name__ == "__main__":
                     # Listen normally for the actual command
                     actual_command = listen(quiet=False)
                     is_running = process_command(actual_command)
+                    if is_running:
+                        print("\n[Going back to sleep... Say 'Hey Assistant' to wake me up]")
