@@ -40,3 +40,32 @@ python src/main.py
 1. Wait for the assistant to announce it is online.
 2. Say the wake word: **"Hey Assistant"**.
 3. Speak your command! (e.g., *"Hey Assistant, summarize my screen"*).
+
+## Integration
+
+You can easily integrate this voice assistant into your own Python applications or systems. 
+
+To use the core features programmatically without the continuous listening loop, you can import and call the functions directly from `main.py`:
+
+```python
+import sys
+import os
+
+# Ensure the src directory is in your Python path
+sys.path.append(os.path.abspath("src"))
+from main import process_command, analyze_screen, speak
+
+# Example: Programmatically trigger the vision feature
+description = analyze_screen()
+speak(description)
+
+# Example: Programmatically pass a command as text
+process_command("what time is it")
+```
+
+If you want the assistant to listen in the background of a GUI app (like Tkinter or PyQt), you can run the core loop in a separate `threading.Thread`.
+
+## Contributors
+
+* **ASRA ARSHAD**
+* **HAZAM LIAQAT**
