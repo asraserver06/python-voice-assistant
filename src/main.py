@@ -10,6 +10,9 @@ import urllib.parse
 import threading
 from AppOpener import open as open_app
 from dotenv import load_dotenv
+import base64
+import io
+from PIL import ImageGrab
 
 # Load environment variables
 load_dotenv()
@@ -49,7 +52,7 @@ def listen(quiet=False):
     
     # Disable dynamic calibration which often breaks on noisy laptops and stops it from hearing you
     recognizer.dynamic_energy_threshold = False
-    recognizer.energy_threshold = 400 # 400 is a solid baseline for normal speaking volume
+    recognizer.energy_threshold = 150 # 150 makes it more sensitive to quieter voices
     
     try:
         with sr.Microphone() as source:
@@ -107,6 +110,44 @@ def ask_gemini(prompt):
         print(f"Gemini error: {e}")
         return "I had trouble connecting to my AI brain."
 
+def analyze_screen():
+    """Captures the screen and sends it to Gemini Vision for a summary."""
+    if not api_key or api_key == "your_api_key_here":
+        return "I'm sorry, my Gemini AI is not configured. Please check the API key."
+    try:
+        # Capture screen
+        screenshot = ImageGrab.grab()
+        
+        # Convert to base64
+        buffered = io.BytesIO()
+        screenshot.thumbnail((1920, 1080))
+        screenshot.save(buffered, format="JPEG", quality=85)
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+        headers = {
+            "Content-Type": "application/json",
+            "X-goog-api-key": api_key
+        }
+        data = {
+            "contents": [{
+                "parts": [
+                    {"text": "You are a helpful voice assistant. Briefly describe what is on this screen in one or two conversational sentences. Do not mention that this is a screenshot or image."},
+                    {"inline_data": {"mime_type": "image/jpeg", "data": img_str}}
+                ]
+            }]
+        }
+        
+        response = requests.post(url, headers=headers, json=data, timeout=(10, 60))
+        response.raise_for_status()
+        
+        result = response.json()
+        return result["candidates"][0]["content"]["parts"][0]["text"].strip()
+        
+    except Exception as e:
+        print(f"Screen summarization error: {e}")
+        return "I had trouble looking at your screen."
+
 def process_command(command):
     """Routes the command to the appropriate action."""
     if not command:
@@ -137,6 +178,11 @@ def process_command(command):
         encoded_query = urllib.parse.quote_plus(query)
         speak(f"Searching Google for {query}.")
         webbrowser.open(f"https://www.google.com/search?q={encoded_query}")
+
+    elif any(phrase in command for phrase in ["what am i looking at", "summarize my screen", "what's on my screen", "summarize my"]):
+        speak("Let me take a look...")
+        response = analyze_screen()
+        speak(response)
 
     elif command.startswith("open "):
         app_name = command[5:].strip()
@@ -206,6 +252,8 @@ if __name__ == "__main__":
                     # They said a full sentence: "Hey Assistant what time is it"
                     print(f"\nUser said: {user_command}")
                     is_running = process_command(command_after_wake)
+                    if is_running:
+                        print("\n[Going back to sleep... Say 'Hey Assistant' to wake me up]")
                 else:
                     # They just said "Hey Assistant"
                     print(f"\nUser said: {user_command}")
@@ -213,3 +261,5 @@ if __name__ == "__main__":
                     # Listen normally for the actual command
                     actual_command = listen(quiet=False)
                     is_running = process_command(actual_command)
+                    if is_running:
+                        print("\n[Going back to sleep... Say 'Hey Assistant' to wake me up]")
